@@ -21,7 +21,7 @@ public class testConverter {
                         "            \"type\" : \"long\"," +
                         "            \"logicalType\" : \"timestamp-millis\"}]}]" +
                         "}";
-        GenericRecord gr = test.generateGenericRecord("guillaume", 33, System.currentTimeMillis(), schema);
+        GenericRecord gr = test.generateGenericRecord("name", 33, System.currentTimeMillis(), schema);
         byte[] bytes = converter.convertToJson(gr);
         String jsonString = new String(bytes, "UTF-8");
         System.out.println(jsonString);
