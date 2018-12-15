@@ -65,13 +65,140 @@
             <version>1.18.4</version>
             <scope>provided</scope>
         </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
     </dependencies>
+
+
 
     <build>
         <plugins>
+            <!--dependency added to get some informations about git displayed in /actuator/info-->
+            <!-- More configuration can be found here : https://github.com/git-commit-id/maven-git-commit-id-plugin#using-the-plugin -->
+            <plugin>
+                <groupId>pl.project13.maven</groupId>
+                <artifactId>git-commit-id-plugin</artifactId>
+                <version>2.2.5</version>
+                <executions>
+                    <execution>
+                        <id>get-the-git-infos</id>
+                        <goals>
+                            <goal>revision</goal>
+                        </goals>
+                        <!-- *NOTE*: The default phase of revision is initialize, but in case you want to change it, you can do so by adding the phase here -->
+                        <phase>initialize</phase>
+                    </execution>
+                </executions>
+
+                <configuration>
+                    <!--
+                        If you'd like to tell the plugin where your .git directory is,
+                        use this setting, otherwise we'll perform a search trying to
+                        figure out the right directory. It's better to add it explicitly IMHO.
+                    -->
+                    <dotGitDirectory>${project.basedir}/.git</dotGitDirectory>
+
+                    <!-- @since 2.2.0 -->
+                    <!--
+                         The current dateFormat is set to match maven's default ``yyyy-MM-dd'T'HH:mm:ssZ``
+                         Please note that in previous versions (2.2.0 - 2.2.2) the default dateFormat was set to: ``dd.MM.yyyy '@' HH:mm:ss z``. However the `RFC 822 time zone` seems to give a more reliable option in parsing the date and it's being used in maven as default.
+                     -->
+                    <dateFormat>yyyy-MM-dd'T'HH:mm:ssZ</dateFormat>
+
+                    <!-- @since 2.2.0 -->
+                    <!--
+                         If you want to set the timezone of the dateformat to anything in particular you can do this by using this option.
+                         As a general warning try to avoid three-letter time zone IDs because the same abbreviation are often used for multiple time zones.
+                         The default value we'll use the timezone use the timezone that's shipped with java (java.util.TimeZone.getDefault().getID()).
+                         *Note*: If you plan to set the java's timezone by using `MAVEN_OPTS=-Duser.timezone=UTC mvn clean package`, `mvn clean package -Duser.timezone=UTC` or any other configuration keep in mind that this option will override those settings and will not take other configurations into account!
+                    -->
+                    <dateFormatTimeZone>${user.timezone}</dateFormatTimeZone>
+
+                    <!-- false is default here, it prints some more information during the build -->
+                    <verbose>true</verbose>
+
+                    <generateGitPropertiesFile>true</generateGitPropertiesFile>
+                    <generateGitPropertiesFilename>${project.build.outputDirectory}/git.properties</generateGitPropertiesFilename>
+                    <format>properties</format>
+
+                    <!--
+                        this is true by default; You may want to set this to false, if the plugin should run inside a
+                        <packaging>pom</packaging> project. Most projects won't need to override this property.
+
+                        For an use-case for this kind of behaviour see: https://github.com/ktoso/maven-git-commit-id-plugin/issues/21
+                    -->
+                    <skipPoms>true</skipPoms>
+
+                    <!-- @since 2.1.4 -->
+                    <!--
+                        Tell maven-git-commit-id to inject the git properties into all reactor projects not just the current one.
+                        For details about why you might want to skip this, read this issue: https://github.com/ktoso/maven-git-commit-id-plugin/pull/65
+                        The property is set to ``false`` by default to prevent the overriding of properties that may be unrelated to the project.
+                    -->
+                    <injectAllReactorProjects>false</injectAllReactorProjects>
+
+                    <!-- @since 2.1.8 -->
+                    <!--
+                        skip the plugin execution completely. This is useful for e.g. profile activated plugin invocations or
+                        to use properties to enable / disable pom features. Default value is 'false'.
+                        With version 2.2.3 you can also skip the plugin by using the commandline option -Dmaven.gitcommitid.skip=true
+                    -->
+                    <skip>false</skip>
+
+                    <!-- @since 2.1.12 -->
+                    <!--
+                       Use with caution!
+
+                       In a multi-module build, only run once. This means that the plugins effects will only execute once, for the parent project.
+                       This probably won't "do the right thing" if your project has more than one git repository.
+
+                       Important: If you're using `generateGitPropertiesFile`, setting `runOnlyOnce` will make the plugin
+                       only generate the file in the directory where you started your build (!).
+
+                       Important: Please note that the git-commit-id-plugin also has an option to skip pom project (`<packaging>pom</packaging>`).
+                       If you plan to use the `runOnlyOnce` option alongside with an aggregator pom you may want to set `<skipPoms>false</skipPoms>`.
+
+                       The `git.*` maven properties are available in all modules.
+                       Default value is `false`.
+                    -->
+                    <runOnlyOnce>false</runOnlyOnce>
+
+                    <includeOnlyProperties>
+                        <includeOnlyProperty>git.branch</includeOnlyProperty>
+                        <includeOnlyProperty>git.build.host</includeOnlyProperty>
+                        <includeOnlyProperty>git.build.time</includeOnlyProperty>
+                        <includeOnlyProperty>git.build.version</includeOnlyProperty>
+                        <includeOnlyProperty>git.commit.id.abbrev</includeOnlyProperty>
+                        <includeOnlyProperty>git.commit.time</includeOnlyProperty>
+                        <includeOnlyProperty>git.remote.origin.url</includeOnlyProperty>
+                        <!-- <includeOnlyProperty>^git.commit.id.full$</includeOnlyProperty> -->
+                    </includeOnlyProperties>
+
+                    <!-- @since v2.0.4 -->
+                    <!--
+                         Controls the length of the abbreviated git commit it (git.commit.id.abbrev)
+
+                         Defaults to `7`.
+                         `0` carries the special meaning.
+                         Maximum value is `40`, because of max SHA-1 length.
+                     -->
+                    <abbrevLength>7</abbrevLength>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <!-- Add build-info goal to get some informations about the build displayed in /actuator/info-->
+                <!--<executions>-->
+                    <!--<execution>-->
+                        <!--<goals>-->
+                            <!--<goal>build-info</goal>-->
+                        <!--</goals>-->
+                    <!--</execution>-->
+                <!--</executions>-->
             </plugin>
         </plugins>
     </build>
